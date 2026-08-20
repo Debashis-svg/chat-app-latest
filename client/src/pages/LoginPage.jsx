@@ -13,18 +13,26 @@ const LoginPage = () => {
     const [isDataSubmitted, setIsDataSubmitted] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [isChecked, setIsChecked] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const { login } = useContext(AuthContext)
 
-    const onSubmitHandler = (event) => {
+    const onSubmitHandler = async (event) => {
         event.preventDefault();
+
+        if (isSubmitting) return;
 
         if (currState === 'Sign up' && !isDataSubmitted) {
             setIsDataSubmitted(true)
             return;
         }
 
-        login(currState === "Sign up" ? 'signup' : 'login', { fullName, email, password, bio })
+        setIsSubmitting(true)
+        try {
+            await login(currState === "Sign up" ? 'signup' : 'login', { fullName, email, password, bio })
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -40,10 +48,10 @@ const LoginPage = () => {
                     {currState}
                     {isDataSubmitted && (
                         <img
-                            onClick={() => setIsDataSubmitted(false)}
+                            onClick={() => !isSubmitting && setIsDataSubmitted(false)}
                             src={assets.arrow_icon}
                             alt=""
-                            className='w-5 cursor-pointer'
+                            className={`w-5 ${isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                         />
                     )}
                 </h2>
@@ -56,6 +64,7 @@ const LoginPage = () => {
                         className='p-2 border border-gray-500 rounded-md focus:outline-none'
                         placeholder="Full Name"
                         required
+                        disabled={isSubmitting}
                     />
                 )}
 
@@ -67,6 +76,7 @@ const LoginPage = () => {
                             type="email"
                             placeholder='Email Address'
                             required
+                            disabled={isSubmitting}
                             className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                         />
 
@@ -77,11 +87,12 @@ const LoginPage = () => {
                                 type={showPassword ? "text" : "password"}
                                 placeholder='Password'
                                 required
+                                disabled={isSubmitting}
                                 className='w-full p-2 pr-10 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                             />
                             <span
-                                onClick={() => setShowPassword((prev) => !prev)}
-                                className='absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-300 cursor-pointer select-none'
+                                onClick={() => !isSubmitting && setShowPassword((prev) => !prev)}
+                                className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-300 select-none ${isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                             >
                                 {showPassword ? "Hide" : "Show"}
                             </span>
@@ -97,15 +108,18 @@ const LoginPage = () => {
                         className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                         placeholder='provide a short bio...'
                         required
+                        disabled={isSubmitting}
                     ></textarea>
                 )}
 
                 <button
                     type='submit'
-                    disabled={!isChecked}
-                    className={`py-3 bg-gradient-to-r from-purple-400 to-violet-600 text-white rounded-md ${isChecked ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                    disabled={!isChecked || isSubmitting}
+                    className={`py-3 bg-gradient-to-r from-purple-400 to-violet-600 text-white rounded-md ${isChecked && !isSubmitting ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
                 >
-                    {currState === "Sign up" ? "Create Account" : "Login Now"}
+                    {isSubmitting
+                        ? currState === "Sign up" ? "Signing up..." : "Logging in..."
+                        : currState === "Sign up" ? "Create Account" : "Login Now"}
                 </button>
 
                 <div className='flex items-center gap-2 text-sm text-gray-500'>
@@ -113,6 +127,7 @@ const LoginPage = () => {
                         type="checkbox"
                         checked={isChecked}
                         onChange={(e) => setIsChecked(e.target.checked)}
+                        disabled={isSubmitting}
                     />
                     <p>Agree to the terms of use & privacy policy.</p>
                 </div>
@@ -122,8 +137,8 @@ const LoginPage = () => {
                         <p className='text-sm text-gray-600'>
                             Already have an account?{' '}
                             <span
-                                onClick={() => { setCurrState("Login"); setIsDataSubmitted(false) }}
-                                className='font-medium text-violet-500 cursor-pointer'
+                                onClick={() => !isSubmitting && (setCurrState("Login"), setIsDataSubmitted(false))}
+                                className={`font-medium text-violet-500 ${isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                             >
                                 Login here
                             </span>
@@ -132,8 +147,8 @@ const LoginPage = () => {
                         <p className='text-sm text-gray-600'>
                             Create an account{' '}
                             <span
-                                onClick={() => setCurrState("Sign up")}
-                                className='font-medium text-violet-500 cursor-pointer'
+                                onClick={() => !isSubmitting && setCurrState("Sign up")}
+                                className={`font-medium text-violet-500 ${isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                             >
                                 Click here
                             </span>

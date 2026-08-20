@@ -8,7 +8,7 @@ export const ChatProvider = ({ children }) => {
 
     const [messages, setMessages] = useState([]);              // Holds messages of the currently selected chat
     const [users, setUsers] = useState([]);                    // Holds the list of all users
-    const [selectedUser, setSelectedUser] = useState(null);    // Holds the user whose chat is currently selected
+    const [selectedUser, setSelectedUserState] = useState(null);    // Holds the user whose chat is currently selected
     const [unseenMessages, setUnseenMessages] = useState({});  // Holds the count of unread messages for each user
     const [isTyping, setIsTyping] = useState(false);           // Is the selected user currently typing?
     const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false); // Is the right-side info/profile panel open?
@@ -16,6 +16,16 @@ export const ChatProvider = ({ children }) => {
     const { socket, axios, authUser } = useContext(AuthContext);
 
     const typingSafetyTimeoutRef = useRef(null);
+    const selectedUserRef = useRef(null);
+
+    // Clear the old conversation in the same update that changes the
+    // selected user. This prevents User A's messages being rendered beneath
+    // User B's header while User B's history is still loading.
+    const setSelectedUser = (user) => {
+        selectedUserRef.current = user;
+        setMessages([]);
+        setSelectedUserState(user);
+    };
 
     // Reset chat state whenever the logged-in user changes. ChatProvider
     // sits above the router, so it never unmounts between LoginPage and
@@ -60,7 +70,10 @@ export const ChatProvider = ({ children }) => {
         try {
             const { data } = await axios.get(`/api/messages/${userId}`);
 
-            if (data.success) {
+            // Requests can finish out of order when someone changes chats
+            // quickly. Only the response for the chat that is still open is
+            // allowed to replace the message list.
+            if (data.success && selectedUserRef.current?._id === userId) {
                 setMessages(data.messages);
             }
         } catch (error) {

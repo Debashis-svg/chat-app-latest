@@ -11,12 +11,22 @@ import { Server } from "socket.io";
 const app = express();
 const server = http.createServer(app);   //Creates a Node.js HTTP server and attaches your Express app to it.
 
+// CLIENT_ORIGIN may contain one or more comma-separated frontend origins.
+// When it is not configured, reflect the requesting origin so a newly
+// deployed frontend can still establish its Socket.IO connection.
+const clientOrigins = (process.env.CLIENT_ORIGIN || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+const corsOptions = {
+    origin: clientOrigins.length ? clientOrigins : true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+};
+
 // Initialize Socket.IO server
 export const io = new Server(server, {
-    cors: {
-        origin: "https://your-chat-app.vercel.app",
-        methods: ["GET", "POST"]
-    }
+    cors: corsOptions
 });
 
 // Store currently online users
@@ -79,7 +89,7 @@ io.on("connection", (socket) => {
 // Middleware setup
 app.use(express.json({ limit: "4mb" }));    //Allows Express to understand JSON data sent in requests.
 // limit: "4mb" means the JSON request body can be up to 4 MB.
-app.use(cors());
+app.use(cors(corsOptions));
 
 // routes setup
 app.use("/api/status", (req, res) => { res.send("Server is live"); });

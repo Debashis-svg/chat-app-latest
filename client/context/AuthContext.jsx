@@ -83,18 +83,21 @@ export const AuthProvider = ({ children }) => {
         if (!userData || socket?.connected) return;
 
         const newSocket = io(backendUrl, {
+            // Register all listeners before opening the connection. Otherwise
+            // a fast server response can emit the initial online-user list
+            // before this client has started listening for it.
+            autoConnect: false,
             query: {
                 userId: userData._id,
             }
         });
 
-        newSocket.connect();
-
-        setSocket(newSocket);
-
         newSocket.on("getOnlineUsers", (userIds) => {
             setOnlineUsers(userIds);
         });
+
+        setSocket(newSocket);
+        newSocket.connect();
     };
 
     useEffect(() => {

@@ -12,9 +12,10 @@ const app = express();
 const server = http.createServer(app);   //Creates a Node.js HTTP server and attaches your Express app to it.
 
 // Initialize Socket.IO server
-export const io = new Server(server, {
+const io = new Server(server, {
     cors: {
-        origin: "*"
+        origin: "https://your-chat-app.vercel.app",
+        methods: ["GET", "POST"]
     }
 });
 
